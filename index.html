@@ -323,36 +323,46 @@
     <p style="margin-top:0.2rem; opacity:0.5;">© 2026 · Fe · Esperanza · Caridad</p>
   </footer>
 
-  <script>
-    // ⚠️ REEMPLAZAR con la URL de tu Apps Script (ver instrucciones abajo)
-    const URL_SCRIPT = "https://script.google.com/macros/s/AKfycbzcOh4Nfivkj7tqo1JJRMhG3mu7SrbBCJeSthwY0jr7fmIQEPck62J2YwNqyCJoYt0Y3g/exec";
+<script>
+    const URL_SCRIPT = "https://script.google.com/macros/s/TU_ID_DE_SCRIPT/exec";
 
-    let rangos = []; // [{nombre, inicio, fin}]
-    let vendidos = []; // [1, 5, 23, ...]
+    let rangos = [];
+    let vendidos = [];
 
-    // Cargar datos iniciales (rangos y vendidos)
-    async function cargarDatos() {
-      try {
-        const resp = await fetch(URL_SCRIPT + "?action=datos");
-        const data = await resp.json();
-        rangos = data.rangos;
-        vendidos = data.vendidos;
+    // Cargar datos con JSONP (evita CORS)
+    function cargarDatos() {
+      return new Promise((resolve, reject) => {
+        const callbackName = 'jsonpCallback_' + Date.now();
+        window[callbackName] = function(data) {
+          rangos = data.rangos;
+          vendidos = data.vendidos;
 
-        // Llenar el select de vendedoras
-        const select = document.getElementById('vendedora');
-        rangos.forEach(r => {
-          const opt = document.createElement('option');
-          opt.value = r.nombre;
-          opt.textContent = r.nombre;
-          select.appendChild(opt);
-        });
-      } catch (error) {
-        console.error('Error al cargar datos:', error);
-        mostrarMensaje('No se pudieron cargar los datos. Verificá tu conexión.', 'error');
-      }
+          const select = document.getElementById('vendedora');
+          // Limpiar select (dejar solo la opción por defecto)
+          select.innerHTML = '<option value="">-- Seleccioná tu nombre --</option>';
+          rangos.forEach(r => {
+            const opt = document.createElement('option');
+            opt.value = r.nombre;
+            opt.textContent = r.nombre;
+            select.appendChild(opt);
+          });
+
+          delete window[callbackName];
+          document.body.removeChild(script);
+          resolve();
+        };
+
+        const script = document.createElement('script');
+        script.src = URL_SCRIPT + '?action=datos&callback=' + callbackName;
+        script.onerror = function() {
+          delete window[callbackName];
+          document.body.removeChild(script);
+          reject(new Error('Error al cargar datos'));
+        };
+        document.body.appendChild(script);
+      });
     }
 
-    // Validar rango al seleccionar vendedora
     document.getElementById('vendedora').addEventListener('change', (e) => {
       const aviso = document.getElementById('avisoRango');
       const nombre = e.target.value;
@@ -364,7 +374,6 @@
       }
     });
 
-    // Validar número al escribir
     document.getElementById('numero').addEventListener('input', (e) => {
       const aviso = document.getElementById('avisoRango');
       const nombre = document.getElementById('vendedora').value;
@@ -384,7 +393,6 @@
       }
     });
 
-    // Mostrar/ocultar input file según opción
     document.querySelectorAll('input[name="tipoPago"]').forEach(radio => {
       radio.addEventListener('change', (e) => {
         document.querySelectorAll('.radio-option').forEach(el => el.classList.remove('selected'));
@@ -393,10 +401,8 @@
         grupoFoto.style.display = e.target.value === 'foto' ? 'block' : 'none';
       });
     });
-    // Marcar la opción por defecto
     document.getElementById('optFoto').classList.add('selected');
 
-    // Convertir imagen a Base64
     function fileToBase64(file) {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -406,7 +412,6 @@
       });
     }
 
-    // Enviar formulario
     document.getElementById('formVenta').addEventListener('submit', async (e) => {
       e.preventDefault();
       const btn = document.getElementById('btnRegistrar');
@@ -419,7 +424,6 @@
       const tipoPago = document.querySelector('input[name="tipoPago"]:checked').value;
       const fotoInput = document.getElementById('foto');
 
-      // Validaciones
       if (!vendedora) { mostrarMensaje('Seleccioná tu nombre.', 'error'); return; }
       if (!numero) { mostrarMensaje('Ingresá el número vendido.', 'error'); return; }
       if (!cliente) { mostrarMensaje('Ingresá el nombre del comprador.', 'error'); return; }
@@ -439,7 +443,6 @@
         return;
       }
 
-      // Preparar datos
       let imagenBase64 = null;
       let imagenNombre = null;
       if (tipoPago === 'foto' && fotoInput.files[0]) {
@@ -457,28 +460,24 @@
         imagenNombre
       };
 
-      // Enviar
       btn.disabled = true;
       btn.innerHTML = '<span class="spinner"></span><span>Registrando...</span>';
       mensajeDiv.style.display = 'none';
 
       try {
-        const resp = await fetch(URL_SCRIPT, {
+        await fetch(URL_SCRIPT, {
           method: 'POST',
           mode: 'no-cors',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
 
-        // Con no-cors no podemos leer la respuesta, asumimos éxito
         mostrarMensaje(`✅ Número ${numero} vendido a ${cliente} — Pendiente. ¡Gracias!`, 'exito');
-        // Limpiar formulario (pero mantener vendedora)
         document.getElementById('numero').value = '';
         document.getElementById('cliente').value = '';
         document.getElementById('telefono').value = '';
         document.getElementById('foto').value = '';
         document.getElementById('avisoRango').className = 'aviso-rango';
-        // Recargar vendidos para actualizar la lista
         await cargarDatos();
       } catch (error) {
         console.error(error);
@@ -497,8 +496,10 @@
       setTimeout(() => { div.style.display = 'none'; }, 8000);
     }
 
-    // Iniciar
-    cargarDatos();
+    cargarDatos().catch(err => {
+      console.error(err);
+      mostrarMensaje('No se pudieron cargar los datos. Verificá la URL del script.', 'error');
+    });
   </script>
 </body>
 </html>
