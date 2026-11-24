@@ -113,13 +113,6 @@
       -webkit-appearance: none;
       appearance: none;
     }
-    .form-group select {
-      background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23d63384' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-      background-repeat: no-repeat;
-      background-position: right 1rem center;
-      background-size: 1.2rem;
-      padding-right: 2.5rem;
-    }
     .form-group input:focus,
     .form-group select:focus,
     .form-group textarea:focus {
@@ -127,6 +120,116 @@
       box-shadow: 0 0 0 4px rgba(214, 51, 132, 0.1);
     }
     .form-group input::placeholder { color: #c4b3bb; font-size: 0.9rem; }
+
+    /* Selector custom de vendedora */
+    .selector-vendedora {
+      width: 100%;
+      padding: 0.95rem 1rem;
+      border: 2px solid #f0dce4;
+      border-radius: 14px;
+      background: white;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 1rem;
+      color: #2d2d2d;
+      text-align: left;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      cursor: pointer;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      min-height: 54px;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+    .selector-vendedora:active { transform: scale(0.99); }
+    .selector-vendedora:focus {
+      outline: none;
+      border-color: #d63384;
+      box-shadow: 0 0 0 4px rgba(214, 51, 132, 0.1);
+    }
+    .selector-vendedora.vacio { color: #c4b3bb; }
+
+    /* Modal de selección */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      display: none;
+      align-items: flex-end;
+      justify-content: center;
+      z-index: 1000;
+      padding: 0;
+    }
+    .modal-overlay.activo { display: flex; }
+    .modal-content {
+      background: white;
+      width: 100%;
+      max-width: 600px;
+      border-radius: 24px 24px 0 0;
+      padding: 1.2rem 1rem 2rem;
+      max-height: 80vh;
+      overflow-y: auto;
+      animation: slideUp 0.3s ease;
+      box-shadow: 0 -10px 40px rgba(0,0,0,0.2);
+    }
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+    .modal-titulo {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #1a1a1a;
+      text-align: center;
+      margin-bottom: 1rem;
+      padding-bottom: 0.8rem;
+      border-bottom: 2px solid #fce4ec;
+    }
+    .modal-opcion {
+      width: 100%;
+      padding: 1rem;
+      border: 2px solid #f0dce4;
+      border-radius: 14px;
+      background: white;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 1rem;
+      color: #2d2d2d;
+      text-align: left;
+      margin-bottom: 0.6rem;
+      cursor: pointer;
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 54px;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+    .modal-opcion:active { transform: scale(0.98); background: #fce4ec; }
+    .modal-opcion.seleccionada {
+      border-color: #d63384;
+      background: #fce4ec;
+      font-weight: 600;
+    }
+    .modal-cerrar {
+      width: 100%;
+      padding: 0.9rem;
+      border: none;
+      border-radius: 14px;
+      background: #f5e8ee;
+      color: #a08a94;
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 600;
+      font-size: 0.9rem;
+      margin-top: 0.5rem;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
 
     .radio-group { display: flex; flex-direction: column; gap: 0.6rem; margin-top: 0.2rem; }
     .radio-option {
@@ -300,10 +403,12 @@
     <section class="form-section">
       <form id="formVenta">
         <div class="form-group">
-          <label for="vendedora">Vendedora</label>
-          <select id="vendedora" required>
-            <option value="">-- Seleccioná tu nombre --</option>
-          </select>
+          <label>Vendedora</label>
+          <button type="button" id="btnVendedora" class="selector-vendedora vacio">
+            <span id="vendedoraTexto">-- Seleccioná tu nombre --</span>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#d63384" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <input type="hidden" id="vendedora" required />
           <div id="avisoRango" class="aviso-rango"></div>
         </div>
 
@@ -362,8 +467,17 @@
     </footer>
   </div>
 
+  <!-- Modal de selección de vendedora -->
+  <div class="modal-overlay" id="modalVendedora">
+    <div class="modal-content">
+      <div class="modal-titulo">Elegí tu nombre</div>
+      <div id="listaVendedoras"></div>
+      <button type="button" class="modal-cerrar" id="cerrarModal">Cancelar</button>
+    </div>
+  </div>
+
   <script>
-    const URL_SCRIPT = "https://script.google.com/macros/s/AKfycbzcOh4Nfivkj7tqo1JJRMhG3mu7SrbBCJeSthwY0jr7fmIQEPck62J2YwNqyCJoYt0Y3g/exec";
+    const URL_SCRIPT = "https://script.google.com/macros/s/TU_ID_DE_SCRIPT/exec";
 
     let rangos = [];
     let vendidos = [];
@@ -375,13 +489,19 @@
           rangos = data.rangos;
           vendidos = data.vendidos;
 
-          const select = document.getElementById('vendedora');
-          select.innerHTML = '<option value="">-- Seleccioná tu nombre --</option>';
+          // Llenar la lista del modal
+          const lista = document.getElementById('listaVendedoras');
+          lista.innerHTML = '';
           rangos.forEach(r => {
-            const opt = document.createElement('option');
-            opt.value = r.nombre;
-            opt.textContent = r.nombre;
-            select.appendChild(opt);
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'modal-opcion';
+            btn.innerHTML = `<span>${r.nombre}</span><span style="color:#d63384;font-size:0.8rem;">${r.inicio}-${r.fin}</span>`;
+            btn.addEventListener('click', () => {
+              seleccionarVendedora(r.nombre);
+              cerrarModal();
+            });
+            lista.appendChild(btn);
           });
 
           delete window[callbackName];
@@ -400,16 +520,40 @@
       });
     }
 
-    document.getElementById('vendedora').addEventListener('change', (e) => {
+    // Abrir modal
+    document.getElementById('btnVendedora').addEventListener('click', () => {
+      document.getElementById('modalVendedora').classList.add('activo');
+    });
+
+    // Cerrar modal
+    document.getElementById('cerrarModal').addEventListener('click', cerrarModal);
+    document.getElementById('modalVendedora').addEventListener('click', (e) => {
+      if (e.target.id === 'modalVendedora') cerrarModal();
+    });
+
+    function cerrarModal() {
+      document.getElementById('modalVendedora').classList.remove('activo');
+    }
+
+    function seleccionarVendedora(nombre) {
+      document.getElementById('vendedora').value = nombre;
+      const texto = document.getElementById('vendedoraTexto');
+      texto.textContent = nombre;
+      document.getElementById('btnVendedora').classList.remove('vacio');
+
+      // Marcar opción seleccionada en el modal
+      document.querySelectorAll('.modal-opcion').forEach(btn => {
+        btn.classList.toggle('seleccionada', btn.querySelector('span').textContent === nombre);
+      });
+
+      // Mostrar rango
       const aviso = document.getElementById('avisoRango');
-      const nombre = e.target.value;
-      if (!nombre) { aviso.className = 'aviso-rango'; return; }
       const r = rangos.find(x => x.nombre === nombre);
       if (r) {
         aviso.textContent = `Tus números van del ${r.inicio} al ${r.fin}`;
         aviso.className = 'aviso-rango ok';
       }
-    });
+    }
 
     document.getElementById('numero').addEventListener('input', (e) => {
       const aviso = document.getElementById('avisoRango');
