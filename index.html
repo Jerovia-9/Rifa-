@@ -477,47 +477,39 @@
   </div>
 
   <script>
+    // ⚠️ REEMPLAZAR con la URL de tu Apps Script (termina en /exec)
     const URL_SCRIPT = "https://script.google.com/macros/s/AKfycbzcOh4Nfivkj7tqo1JJRMhG3mu7SrbBCJeSthwY0jr7fmIQEPck62J2YwNqyCJoYt0Y3g/exec";
 
     let rangos = [];
     let vendidos = [];
 
-    function cargarDatos() {
-      return new Promise((resolve, reject) => {
-        const callbackName = 'jsonpCallback_' + Date.now();
-        window[callbackName] = function(data) {
-          rangos = data.rangos;
-          vendidos = data.vendidos;
+    // Cargar datos con fetch normal (funciona en celular)
+    async function cargarDatos() {
+      try {
+        const resp = await fetch(URL_SCRIPT + "?action=datos");
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        const data = await resp.json();
+        rangos = data.rangos;
+        vendidos = data.vendidos;
 
-          // Llenar la lista del modal
-          const lista = document.getElementById('listaVendedoras');
-          lista.innerHTML = '';
-          rangos.forEach(r => {
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.className = 'modal-opcion';
-            btn.innerHTML = `<span>${r.nombre}</span><span style="color:#d63384;font-size:0.8rem;">${r.inicio}-${r.fin}</span>`;
-            btn.addEventListener('click', () => {
-              seleccionarVendedora(r.nombre);
-              cerrarModal();
-            });
-            lista.appendChild(btn);
+        // Llenar la lista del modal
+        const lista = document.getElementById('listaVendedoras');
+        lista.innerHTML = '';
+        rangos.forEach(r => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'modal-opcion';
+          btn.innerHTML = `<span>${r.nombre}</span><span style="color:#d63384;font-size:0.8rem;">${r.inicio}-${r.fin}</span>`;
+          btn.addEventListener('click', () => {
+            seleccionarVendedora(r.nombre);
+            cerrarModal();
           });
-
-          delete window[callbackName];
-          if (script.parentNode) document.body.removeChild(script);
-          resolve();
-        };
-
-        const script = document.createElement('script');
-        script.src = URL_SCRIPT + '?action=datos&callback=' + callbackName;
-        script.onerror = function() {
-          delete window[callbackName];
-          if (script.parentNode) document.body.removeChild(script);
-          reject(new Error('Error al cargar datos'));
-        };
-        document.body.appendChild(script);
-      });
+          lista.appendChild(btn);
+        });
+      } catch (error) {
+        console.error('Error al cargar datos:', error);
+        mostrarMensaje('No se pudieron cargar los datos. Verificá la URL del script.', 'error');
+      }
     }
 
     // Abrir modal
@@ -678,10 +670,7 @@
       setTimeout(() => { div.style.display = 'none'; }, 8000);
     }
 
-    cargarDatos().catch(err => {
-      console.error(err);
-      mostrarMensaje('No se pudieron cargar los datos. Verificá la URL del script.', 'error');
-    });
+    cargarDatos();
   </script>
 </body>
 </html>
